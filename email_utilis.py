@@ -6,8 +6,8 @@ from models import Order
 
 env = dotenv_values(".env")
 
-SENDGRID_API_KEY = env.get("SENDGRID_API_KEY")
-MAIL_FROM = env.get("MAIL_FROM")
+SENDGRID_API_KEY =  os.environ.get("SENDGRID_API_KEY")
+MAIL_FROM =  os.environ.get("MAIL_FROM")
 
 async def send_verification_email(email_to: str, link: str, subject: str):
     message = Mail(
