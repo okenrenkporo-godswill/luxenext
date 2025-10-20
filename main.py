@@ -44,7 +44,10 @@ app.include_router(router_password.router) # Payments
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",             # local frontend
+        "https://luxenext-f.vercel.app",     # deployed frontend
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
