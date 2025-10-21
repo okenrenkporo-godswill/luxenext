@@ -11,28 +11,38 @@ MAIL_FROM = os.getenv("MAIL_FROM")
 
 
 async def send_verification_email(email_to: str, link: str, subject: str):
+    html_content = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; color: #333;">
+        <p>Hi,</p>
+        <p>Please verify your account by clicking the button below:</p>
+
+        <!-- Button wrapped in table for better email client compatibility -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+                <td align="center" bgcolor="#4CAF50" style="border-radius: 5px;">
+                    <a href="{link}" target="_blank"
+                       style="display: inline-block; padding: 12px 24px; font-size: 16px; 
+                              color: #ffffff; text-decoration: none; font-weight: bold;">
+                        ✅ Verify My Account
+                    </a>
+                </td>
+            </tr>
+        </table>
+
+        <p>This link expires in 10 minutes.</p>
+    </body>
+    </html>
+    """
+
     message = Mail(
         from_email=MAIL_FROM,
         to_emails=email_to,
         subject=subject,
         plain_text_content=f"Hi,\n\nPlease verify your account using this link: {link}\n\nThis link expires in 10 minutes.",
-        html_content=f"""
-        <html>
-        <body>
-            <p>Hi,</p>
-            <p>Please verify your account by clicking the button below:</p>
-            <p>
-                <a href="{link}" 
-                   style="display:inline-block;padding:10px 20px;background:#4CAF50;color:white;
-                          text-decoration:none;border-radius:5px;">
-                    ✅ Verify My Account
-                </a>
-            </p>
-            <p>This link expires in 10 minutes.</p>
-        </body>
-        </html>
-        """
+        html_content=html_content
     )
+
     try:
         sg = SendGridAPIClient(SENDGRID_API_KEY)
         response = sg.send(message)
@@ -40,6 +50,9 @@ async def send_verification_email(email_to: str, link: str, subject: str):
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
         raise
+
+
+    
 
 def send_order_email(email_to: str, subject: str, order: dict):
     """
