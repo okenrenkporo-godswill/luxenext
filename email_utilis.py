@@ -1,13 +1,14 @@
 import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
-from dotenv import dotenv_values
+
 from models import Order
 
-env = dotenv_values(".env")
 
-SENDGRID_API_KEY = env.get("SENDGRID_API_KEY")
-MAIL_FROM = env.get("MAIL_FROM")
+
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+MAIL_FROM = os.getenv("MAIL_FROM")
+
 
 async def send_verification_email(email_to: str, link: str, subject: str):
     message = Mail(
@@ -123,7 +124,7 @@ def send_order_email(email_to: str, subject: str, order: dict):
 # 🔹 Payment Confirmed Email
 async def send_payment_received(email_to: str, order_ref: str, amount: float):
     subject = f"Payment Confirmed for Order #{order_ref}"
-    link = f"http://localhost:3000/orders/{order_ref}"
+    link = f"https://luxenext-f.vercel.app//orders/{order_ref}"
     
     html_content = f"""
     <html>
