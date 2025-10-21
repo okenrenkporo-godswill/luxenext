@@ -18,8 +18,8 @@ from email_utilis import send_verification_email
 load_dotenv()
 
 
-FRONTEND_URL =  os.environ.get("FRONTEND_URL", "http://localhost:3000")
-BACKEND_URL =  os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://luxenext-f.vercel.app")
+BACKEND_URL = os.getenv("BACKEND_URL", "https://luxenext.onrender.com")
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -48,7 +48,7 @@ async def register(user: schemas.UserCreate, db: Session = Depends(database.get_
                 "username": existing_user.username,
                 "email": existing_user.email,
             })
-            verification_link = f"{ os.environ.get('FRONTEND_URL').rstrip('/')}/auth/verify?token={email_token}"
+            verification_link = f"{os.getenv('FRONTEND_URL').rstrip('/')}/auth/verify?token={email_token}"
             await send_verification_email(existing_user.email, verification_link, "Verify Your Account")
             return {"success": True, "message": "User exists but not verified. Verification email resent."}
 
@@ -71,7 +71,7 @@ async def register(user: schemas.UserCreate, db: Session = Depends(database.get_
         "username": new_user.username,
         "email": new_user.email,
     })
-    verification_link = f"{ os.environ.get('FRONTEND_URL').rstrip('/')}/auth/verify?token={email_token}"
+    verification_link = f"{os.getenv('FRONTEND_URL').rstrip('/')}/auth/verify?token={email_token}"
 
     # Send email
     await send_verification_email(new_user.email, verification_link, "Verify Your Account")
@@ -79,7 +79,6 @@ async def register(user: schemas.UserCreate, db: Session = Depends(database.get_
     return {"success": True, "message": "Registration successful. Please check your email to verify your account."}
 
 
-from fastapi import BackgroundTasks
 
 @router.post("/resend-verification")
 async def resend_verification(email: str, db: Session = Depends(database.get_db), background_tasks: BackgroundTasks = None):
@@ -96,7 +95,7 @@ async def resend_verification(email: str, db: Session = Depends(database.get_db)
         "username": user.username,
         "email": user.email,
     })
-    verification_link = f"{ os.environ.get('FRONTEND_URL').rstrip('/')}/auth/verify?token={email_token}"
+    verification_link = f"{os.getenv('FRONTEND_URL').rstrip('/')}/auth/verify?token={email_token}"
 
     # Send in background
     background_tasks.add_task(send_verification_email, user.email, verification_link, "Resend Verification Link")
