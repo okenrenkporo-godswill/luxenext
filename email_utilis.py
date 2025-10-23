@@ -17,7 +17,6 @@ async def send_verification_email(email_to: str, link: str, subject: str):
         <p>Hi,</p>
         <p>Please verify your account by clicking the button below:</p>
 
-        <!-- Button wrapped in table for better email client compatibility -->
         <table role="presentation" border="0" cellpadding="0" cellspacing="0">
             <tr>
                 <td align="center" bgcolor="#4CAF50" style="border-radius: 5px;">
@@ -39,8 +38,7 @@ async def send_verification_email(email_to: str, link: str, subject: str):
         from_email=MAIL_FROM,
         to_emails=email_to,
         subject=subject,
-        plain_text_content=f"Hi,\n\nPlease verify your account using this link: {link}\n\nThis link expires in 10 minutes.",
-        html_content=html_content
+        html_content=html_content  # 👈 removed plain_text_content
     )
 
     try:
@@ -50,7 +48,6 @@ async def send_verification_email(email_to: str, link: str, subject: str):
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
         raise
-
 
     
 
