@@ -11,26 +11,25 @@ MAIL_FROM = os.getenv("MAIL_FROM")
 
 
 async def send_verification_email(email_to: str, link: str, subject: str):
-    html_content = f"""\
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>{subject}</title>
-    </head>
-    <body style="font-family: Arial, sans-serif; background-color:#f9f9f9; padding:40px; color:#333;">
-        <div style="max-width:600px; margin:auto; background:white; border-radius:10px; padding:30px; box-shadow:0 4px 8px rgba(0,0,0,0.05); text-align:center;">
-            <h2 style="color:#007bff;">Verify Your LuxeNext Account</h2>
-            <p style="font-size:16px;">Thank you for signing up! Click the button below to verify your email:</p>
-            <a href="{link}" target="_blank" 
-                style="display:inline-block; margin-top:20px; padding:12px 24px; background:#007bff; color:#fff; text-decoration:none; border-radius:5px; font-weight:bold;">
-                ✅ Verify My Account
-            </a>
-            <p style="margin-top:30px; font-size:14px; color:#666;">If the button doesn’t work, copy and paste this link into your browser:</p>
-            <p><a href="{link}" style="color:#007bff;">{link}</a></p>
-            <p style="margin-top:20px; color:#999;">This link expires in 10 minutes.</p>
-        </div>
+    html_content = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; color: #333;">
+        <p>Hi,</p>
+        <p>Please verify your account by clicking the button below:</p>
+
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+                <td align="center" bgcolor="#4CAF50" style="border-radius: 5px;">
+                    <a href="{link}" target="_blank"
+                       style="display: inline-block; padding: 12px 24px; font-size: 16px; 
+                              color: #ffffff; text-decoration: none; font-weight: bold;">
+                        ✅ Verify My Account
+                    </a>
+                </td>
+            </tr>
+        </table>
+
+        <p>This link expires in 10 minutes.</p>
     </body>
     </html>
     """
@@ -39,13 +38,13 @@ async def send_verification_email(email_to: str, link: str, subject: str):
         from_email=MAIL_FROM,
         to_emails=email_to,
         subject=subject,
-        html_content=html_content
+        html_content=html_content  # 👈 removed plain_text_content
     )
 
     try:
         sg = SendGridAPIClient(SENDGRID_API_KEY)
         response = sg.send(message)
-        print(f"📧 Verification email sent to {email_to} ({response.status_code})")
+        print(f"📧 Email sent to {email_to}, Status code: {response.status_code}")
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
         raise
