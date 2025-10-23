@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 import schemas, crud
 from database import get_db
 from roles import get_current_user
-from email_utilis import send_payment_received, send_payment_rejected
+from email_utilis import send_payment_received,send_payment_rejected
 from models import User, Order
 from models import PaymentOption
 
@@ -20,8 +20,6 @@ def response_format(data=None, message="Success", success=True):
 # Create Payment Method
 # ===============================
 
-
-
 @router.post("/orders/{order_id}/confirm-payment")
 def confirm_manual_payment(
     order_id: int,
@@ -37,7 +35,7 @@ def confirm_manual_payment(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     payment_option = db_order.payment_option
-    if not payment_option or payment_option.provider.lower() not in ["manual", "bank_transfer", "opay""gtbank" "uba bank"]:
+    if not payment_option or payment_option.provider.lower() not in ["manual", "bank_transfer", "opay"]:
         raise HTTPException(status_code=400, detail="Order is not a manual payment")
 
     db_order.payment_status = "paid"

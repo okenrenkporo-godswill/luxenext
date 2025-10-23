@@ -329,3 +329,4 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
     crud.delete_product(db, db_product)
     return response_format(None, "Product deleted successfully")
+
