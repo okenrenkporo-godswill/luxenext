@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
-from datetime import timedelta
+from datetime import timedelta, datetime
 from pydantic import BaseModel
 from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
@@ -12,14 +12,14 @@ from jose import jwt
 import crud
 
 import models, schemas, database
-from auth import authenticate_user, create_access_token, create_email_token, get_password_hash, decode_email_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from auth import authenticate_user, create_access_token, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES, generate_verification_code, create_email_token, decode_email_token
 from email_utilis import send_verification_email
 
 load_dotenv()
 
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://luxenext-f.vercel.app")
-BACKEND_URL = os.getenv("BACKEND_URL", "https://luxenext.onrender.com")
+FRONTEND_URL = os.getenv("FRONTEND_URL","https://luxenext-f.vercel.app")
+BACKEND_URL = os.getenv("BACKEND_URL","https://luxenext.onrender.com")
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -31,7 +31,7 @@ def response_format(data=None, message="Success", success=True):
     return {"success": success, "message": message, "data": data}
 
 
-# ---------------------- Register -------------------# ---------------------- Register ----------------------
+# ---------------------- Register ----------------------
 @router.post("/register")
 async def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     existing_user = db.query(models.User).filter(
@@ -43,14 +43,14 @@ async def register(user: schemas.UserCreate, db: Session = Depends(database.get_
         if existing_user.is_verified:
             raise HTTPException(400, "Username or email already registered")
         else:
-            # User exists but not verified → resend link
-            email_token = create_email_token({
-                "username": existing_user.username,
-                "email": existing_user.email,
-            })
-            verification_link = f"{os.getenv('FRONTEND_URL').rstrip('/')}/auth/verify?token={email_token}"
-            await send_verification_email(existing_user.email, verification_link, "Verify Your Account")
-            return {"success": True, "message": "User exists but not verified. Verification email resent."}
+            # User exists but not verified → resend code
+            code = generate_verification_code()
+            existing_user.verification_code = code
+            existing_user.verification_code_expires_at = datetime.utcnow() + timedelta(minutes=15)
+            db.commit()
+            
+            await send_verification_email(existing_user.email, code, "Verify Your Account")
+            return {"success": True, "message": "User exists but not verified. Verification code resent."}
 
     # ✅ Corrected password hashing
     hashed_password = get_password_hash(user.password)
@@ -62,21 +62,20 @@ async def register(user: schemas.UserCreate, db: Session = Depends(database.get_
         hashed_password=hashed_password,  # ✅ field name fixed
         is_verified=False
     )
+    
+    # Generate code
+    code = generate_verification_code()
+    new_user.verification_code = code
+    new_user.verification_code_expires_at = datetime.utcnow() + timedelta(minutes=15)
+    
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    # Generate token & link (no password in token anymore 👍)
-    email_token = create_email_token({
-        "username": new_user.username,
-        "email": new_user.email,
-    })
-    verification_link = f"{os.getenv('FRONTEND_URL').rstrip('/')}/auth/verify?token={email_token}"
-
     # Send email
-    await send_verification_email(new_user.email, verification_link, "Verify Your Account")
+    await send_verification_email(new_user.email, code, "Verify Your Account")
 
-    return {"success": True, "message": "Registration successful. Please check your email to verify your account."}
+    return {"success": True, "message": "Registration successful. Please check your email for the verification code."}
 
 
 
@@ -90,17 +89,19 @@ async def resend_verification(email: str, db: Session = Depends(database.get_db)
     if user.is_verified:
         raise HTTPException(400, "User already verified")
 
-    # Generate new token
-    email_token = create_email_token({
-        "username": user.username,
-        "email": user.email,
-    })
-    verification_link = f"{os.getenv('FRONTEND_URL').rstrip('/')}/auth/verify?token={email_token}"
+    # Generate new code
+    code = generate_verification_code()
+    user.verification_code = code
+    user.verification_code_expires_at = datetime.utcnow() + timedelta(minutes=15)
+    db.commit()
 
     # Send in background
-    background_tasks.add_task(send_verification_email, user.email, verification_link, "Resend Verification Link")
+    if background_tasks:
+        background_tasks.add_task(send_verification_email, user.email, code, "Resend Verification Code")
+    else:
+        await send_verification_email(user.email, code, "Resend Verification Code")
 
-    return {"success": True, "message": "Verification email resent"}
+    return {"success": True, "message": "Verification code resent"}
 
 
 # ---------------------- Login ----------------------
@@ -134,30 +135,30 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
 
 
-@router.get("/verify")
-def verify_email(token: str, db: Session = Depends(database.get_db)):
-    payload = decode_email_token(token)
+@router.post("/verify-email")
+def verify_email(request: schemas.VerifyEmailRequest, db: Session = Depends(database.get_db)):
+    user = db.query(models.User).filter(models.User.email == request.email.lower()).first()
 
-    user = db.query(models.User).filter(
-        models.User.email == payload["email"].lower()
-    ).first()
+    if not user:
+        raise HTTPException(404, "User not found")
 
-    if user:
-        user.is_verified = True
-        db.commit()
-        db.refresh(user)
-    else:
-        hashed_password = get_password_hash(payload["password"])
-        user = models.User(
-            username=payload["username"],
-            email=payload["email"].lower(),
-            hashed_password=hashed_password,
-            role="user",
-            is_verified=True,  # ✅ ensure it's True after verification
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+    if user.is_verified:
+        return {"success": True, "message": "User already verified"}
+
+    # Check code
+    if not user.verification_code or user.verification_code != request.code:
+        raise HTTPException(400, "Invalid verification code")
+
+    # Check expiration
+    if user.verification_code_expires_at < datetime.utcnow():
+        raise HTTPException(400, "Verification code expired")
+
+    # Mark verified
+    user.is_verified = True
+    user.verification_code = None
+    user.verification_code_expires_at = None
+    db.commit()
+    db.refresh(user)
 
     # 🔑 Generate access token immediately after verification
     access_token = create_access_token(

@@ -7,6 +7,11 @@ from fastapi.security import OAuth2PasswordBearer
 from typing import Optional
 import os
 import models, database
+import secrets
+import string
+
+def generate_verification_code(length=6):
+    return ''.join(secrets.choice(string.digits) for _ in range(length))
 
 SECRET_KEY = os.getenv("SECRET_KEY", "mysecret")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
