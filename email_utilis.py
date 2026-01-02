@@ -7,7 +7,7 @@ load_dotenv()
 
 # SMTP Configuration
 SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 465
+SMTP_PORT = 587
 MAIL_FROM = os.getenv("MAIL_FROM")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
@@ -33,13 +33,15 @@ async def send_email_smtp(to_email: str, subject: str, html_content: str):
     message.set_content(html_content, subtype="html")
 
     try:
+        print(f"🔄 Connecting to {SMTP_SERVER}:{SMTP_PORT}...")
         await aiosmtplib.send(
             message,
             hostname=SMTP_SERVER,
             port=SMTP_PORT,
             username=MAIL_FROM,
             password=EMAIL_PASSWORD,
-            use_tls=True
+            use_tls=False,
+            start_tls=True
         )
         print(f"📧 Email sent to {to_email}")
     except Exception as e:
