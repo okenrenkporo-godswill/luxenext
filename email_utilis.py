@@ -1,5 +1,5 @@
 import os
-import aiosmtplib
+
 from email.message import EmailMessage
 from dotenv import load_dotenv
 
@@ -17,16 +17,20 @@ BRAND_COLOR = "#D4AF37"  # Gold
 BG_COLOR = "#1a1a1a"     # Dark Background
 TEXT_COLOR = "#ffffff"   # White Text
 
-async def send_email_smtp(to_email: str, subject: str, html_content: str):
-    """
-    Helper function to send email using Gmail SMTP
-    """
+import smtplib
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+# ... imports ...
+
+executor = ThreadPoolExecutor()
+
+def send_sync_email(to_email: str, subject: str, html_content: str):
     if not EMAIL_PASSWORD:
         print("⚠️  [DEV MODE] Email skipped. Missing EMAIL_PASSWORD.")
         return
 
     message = EmailMessage()
-    # ✅ Set Sender Name to LuxeNext
     message["From"] = f"{APP_NAME} <{MAIL_FROM}>"
     message["To"] = to_email
     message["Subject"] = subject
@@ -34,19 +38,29 @@ async def send_email_smtp(to_email: str, subject: str, html_content: str):
 
     try:
         print(f"🔄 Connecting to {SMTP_SERVER}:{SMTP_PORT}...")
-        await aiosmtplib.send(
-            message,
-            hostname=SMTP_SERVER,
-            port=SMTP_PORT,
-            username=MAIL_FROM,
-            password=EMAIL_PASSWORD,
-            use_tls=False,
-            start_tls=True
-        )
+        # Use SMTP_SSL for port 465 (Implicit SSL)
+        if SMTP_PORT == 465:
+            with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
+                server.login(MAIL_FROM, EMAIL_PASSWORD)
+                server.send_message(message)
+        else:
+            # Use SMTP + starttls for port 587
+            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
+                server.starttls()
+                server.login(MAIL_FROM, EMAIL_PASSWORD)
+                server.send_message(message)
+        
         print(f"📧 Email sent to {to_email}")
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
         raise e
+
+async def send_email_smtp(to_email: str, subject: str, html_content: str):
+    """
+    Helper function to send email using Gmail SMTP (runs in thread to avoid blocking)
+    """
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(executor, send_sync_email, to_email, subject, html_content)
 
 def get_base_template(content: str) -> str:
     """
