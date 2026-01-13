@@ -298,82 +298,7 @@ def generate_order_reference(length=10):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
 
-def checkout_cart(db: Session, user_id: int, address_id: int, coupon_ids: list[int] = None):
-    # 1️⃣ Get the user's cart
-    cart = db.query(Cart).filter(Cart.user_id == user_id).first()
-    if not cart or not cart.items:
-        raise Exception("Cart is empty")
-
-    subtotal = 0.0
-    order_items_data = []
-
-    # 2️⃣ Prepare order items (no stock check)
-    for item in cart.items:
-        product = db.query(Product).filter(Product.id == item.product_id).first()
-        if not product:
-            raise Exception(f"Product {item.product_id} not found")
-
-        subtotal += item.price_at_addition * item.quantity
-        order_items_data.append({
-            "product_id": item.product_id,
-            "quantity": item.quantity,
-            "price": item.price_at_addition
-        })
-
-    # 3️⃣ Apply tax
-    tax_rate = 0.05
-    tax = subtotal * tax_rate
-    total = subtotal + tax
-
-    # 4️⃣ Apply coupons if any
-    coupons = []
-    discount_amount = 0.0
-    if coupon_ids:
-        for cid in coupon_ids:
-            coupon = db.query(Coupon).filter(Coupon.id == cid, Coupon.active==True).first()
-            if coupon:
-                discount = total * (coupon.discount_percent / 100)
-                total -= discount
-                discount_amount += discount
-                coupons.append(coupon)
-
-    # 5️⃣ Create Order
-    db_order = Order(
-        user_id=user_id,
-        address_id=address_id,
-        total_amount=total,
-        discount_amount=discount_amount,
-        status="pending",
-        payment_status="pending",
-        payment_method="cash",
-        order_reference=generate_order_reference()
-    )
-    db.add(db_order)
-    db.commit()
-    db.refresh(db_order)
-
-    # 6️⃣ Create OrderItems (no stock deduction)
-    for item_data in order_items_data:
-        order_item = OrderItem(
-            order_id=db_order.id,
-            product_id=item_data["product_id"],
-            quantity=item_data["quantity"],
-            price=item_data["price"]
-        )
-        db.add(order_item)
-
-    # 7️⃣ Attach coupons
-    for coupon in coupons:
-        db_order.coupons.append(coupon)
-
-    db.commit()
-
-    # 8️⃣ Clear cart
-    db.query(CartItem).filter(CartItem.cart_id == cart.id).delete()
-    db.commit()
-
-    db.refresh(db_order)
-    return db_order
+# checkout_cart was duplicated here - removed first instance.
 
 
 # ===============================
@@ -673,7 +598,7 @@ def checkout_cart(db: Session, user_id: int, address_id: int, coupon_ids: list[i
     # 1️⃣ Get the user's cart
     cart = db.query(Cart).filter(Cart.user_id == user_id).first()
     if not cart or not cart.items:
-        raise Exception("Cart is empty")
+        raise HTTPException(status_code=400, detail="Cart is empty")
 
     subtotal = 0.0
     order_items_data = []
@@ -682,30 +607,34 @@ def checkout_cart(db: Session, user_id: int, address_id: int, coupon_ids: list[i
     for item in cart.items:
         product = db.query(Product).filter(Product.id == item.product_id).first()
         if not product:
-            raise Exception(f"Product {item.product_id} not found")
+            raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found")
+        
         if product.stock < item.quantity:
-            raise Exception(f"Not enough stock for {product.name}")
+             # Raise 400 Bad Request instead of generic Exception to avoid 500 error
+            raise HTTPException(status_code=400, detail=f"Not enough stock for {product.name} (Available: {product.stock}, Requested: {item.quantity})")
 
         subtotal += item.price_at_addition * item.quantity
         order_items_data.append({
             "product_id": item.product_id,
             "quantity": item.quantity,
-            "price": item.price_at_addition
+            "price": item.price
         })
 
-    # 3️⃣ Apply tax
+    # 3️⃣ Apply tax (5%)
     tax_rate = 0.05
     tax = subtotal * tax_rate
     total = subtotal + tax
 
     # 4️⃣ Apply coupons if provided
     coupons = []
+    discount_total = 0.0
     if coupon_ids:
         for cid in coupon_ids:
-            coupon = db.query(Coupon).filter(Coupon.id == cid, Coupon.active==True).first()
+            coupon = db.query(Coupon).filter(Coupon.id == cid, Coupon.active == True).first()
             if coupon:
-                discount = total * (coupon.discount_percent / 100)
-                total -= discount
+                discount_amount = total * (coupon.discount_percent / 100)
+                total -= discount_amount
+                discount_total += discount_amount
                 coupons.append(coupon)
 
     # 5️⃣ Create Order
@@ -713,7 +642,10 @@ def checkout_cart(db: Session, user_id: int, address_id: int, coupon_ids: list[i
         user_id=user_id,
         address_id=address_id,
         total_amount=total,
+        discount_amount=discount_total,
         status="pending",
+        payment_status="pending",
+        order_reference=generate_order_reference() # ensure unique reference is generated
     )
     db.add(db_order)
     db.commit()
@@ -729,7 +661,7 @@ def checkout_cart(db: Session, user_id: int, address_id: int, coupon_ids: list[i
         )
         db.add(order_item)
 
-        # Update stock
+        # 📉 Deduct stock
         product = db.query(Product).filter(Product.id == item_data["product_id"]).first()
         product.stock -= item_data["quantity"]
         db.add(product)
