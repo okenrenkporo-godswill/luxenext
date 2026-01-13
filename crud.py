@@ -617,7 +617,7 @@ def checkout_cart(db: Session, user_id: int, address_id: int, coupon_ids: list[i
         order_items_data.append({
             "product_id": item.product_id,
             "quantity": item.quantity,
-            "price": item.price
+            "price": item.price_at_addition
         })
 
     # 3️⃣ Apply tax (5%)
