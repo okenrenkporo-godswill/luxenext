@@ -1,15 +1,13 @@
 from fastapi import Depends, HTTPException, status, Request
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
-from dotenv import dotenv_values
 from fastapi.security import OAuth2PasswordBearer
-
+import os
 import models, database
 
 # ✅ Load environment variables
-env = dotenv_values(".env")
-SECRET_KEY = env.get("SECRET_KEY", "change-me")
-ALGORITHM = env.get("ALGORITHM", "HS256")
+SECRET_KEY = os.getenv("SECRET_KEY", "mysecret")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
 # ✅ OAuth2PasswordBearer (for header-based tokens)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
