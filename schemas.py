@@ -306,6 +306,12 @@ class CheckoutRequest(BaseModel):
 class ConfirmPaymentRequest(BaseModel):
     payment_reference: str
 
+class PaymentInitializeRequest(BaseModel):
+    email: EmailStr
+    amount: float
+    order_id: Optional[int] = None
+    callback_url: Optional[str] = None
+
 # ===============================
 # Review Schemas
 # ===============================
