@@ -180,7 +180,11 @@ def initialize_paystack_payment(
         raise HTTPException(status_code=404, detail="Order not found")
     
     # Verify order belongs to current user (unless admin)
+    print(f"DEBUG: Payment Init - Current User ID: {current_user.id}, Role: {current_user.role}")
+    print(f"DEBUG: Payment Init - Order ID: {db_order.id}, Order User ID: {db_order.user_id}")
+    
     if db_order.user_id != current_user.id and current_user.role not in ["admin", "superadmin"]:
+        print(f"DEBUG: Authorization failed. Order User {db_order.user_id} != Current User {current_user.id}")
         raise HTTPException(status_code=403, detail="Not authorized to access this order")
     
     # Check if order is already paid

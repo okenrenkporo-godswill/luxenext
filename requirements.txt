@@ -27,3 +27,4 @@ pillow==11.3.0
 
 email-validator==2.3.0
 
+requests
