@@ -180,6 +180,7 @@ def initialize_paystack_payment(
         raise HTTPException(status_code=404, detail="Order not found")
     
     # Verify order belongs to current user (unless admin)
+    # Verify order belongs to current user (unless admin)
     print(f"DEBUG: Payment Init - Current User ID: {current_user.id}, Role: {current_user.role}")
     print(f"DEBUG: Payment Init - Order ID: {db_order.id}, Order User ID: {db_order.user_id}")
     
@@ -214,9 +215,14 @@ def initialize_paystack_payment(
         }
     }
     
-    # Add callback URL if provided
+    # Add callback URL (priority: request > default)
     if payment_data.callback_url:
         data["callback_url"] = payment_data.callback_url
+    else:
+        # Default fallback to frontend payment page
+        frontend_url = os.getenv("FRONTEND_URL", "")
+        if frontend_url:
+            data["callback_url"] = f"{frontend_url}/payment"
     
     # Make request to Paystack
     response = requests.post(url, headers=headers, json=data)
