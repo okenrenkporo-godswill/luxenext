@@ -307,10 +307,20 @@ class ConfirmPaymentRequest(BaseModel):
     payment_reference: str
 
 class PaymentInitializeRequest(BaseModel):
-    email: EmailStr
-    amount: float
-    order_id: Optional[int] = None
+    order_id: int  # Required - order to process payment for
     callback_url: Optional[str] = None
+
+class PaymentVerifyRequest(BaseModel):
+    reference: str  # Paystack payment reference
+
+class PaystackVerifyResponse(BaseModel):
+    status: bool
+    message: str
+    data: Optional[dict] = None
+
+class PaystackWebhookPayload(BaseModel):
+    event: str
+    data: dict
 
 # ===============================
 # Review Schemas
