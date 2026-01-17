@@ -199,6 +199,13 @@ def initialize_paystack_payment(
     
     # Prepare Paystack request
     url = "https://api.paystack.co/transaction/initialize"
+    
+    # DEBUG: Check if key is loaded (DO NOT PRINT FULL KEY)
+    key_exists = bool(PAYSTACK_SECRET_KEY)
+    key_length = len(PAYSTACK_SECRET_KEY) if PAYSTACK_SECRET_KEY else 0
+    key_prefix = PAYSTACK_SECRET_KEY[:4] if PAYSTACK_SECRET_KEY else "None"
+    print(f"DEBUG: Paystack Key Loaded: {key_exists}, Length: {key_length}, Prefix: {key_prefix}")
+    
     headers = {
         "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
         "Content-Type": "application/json",
