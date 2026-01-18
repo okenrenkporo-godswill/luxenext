@@ -161,6 +161,13 @@ load_dotenv()
 
 PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
 
+# Debugging: Log masked key to verify it's loaded correctly
+if PAYSTACK_SECRET_KEY:
+    masked_key = f"{PAYSTACK_SECRET_KEY[:7]}...{PAYSTACK_SECRET_KEY[-4:]}"
+    print(f"DEBUG: PAYSTACK_SECRET_KEY loaded: {masked_key}")
+else:
+    print("DEBUG: PAYSTACK_SECRET_KEY NOT FOUND in environment variables")
+
 # ===============================
 # Initialize Paystack Transaction
 # ===============================
@@ -234,7 +241,7 @@ def initialize_paystack_payment(
             db_order.payment_method = "Paystack"
             db.commit()
         
-        return response_format(paystack_response, "Payment initialization successful")
+        return response_format(paystack_response.get("data"), "Payment initialization successful")
     else:
         error_message = response.json().get("message", "Payment initialization failed")
         raise HTTPException(status_code=response.status_code, detail=error_message)

@@ -54,7 +54,7 @@ def send_sync_email(to_email: str, subject: str, html_content: str):
         print(f"📧 Email sent to {to_email}")
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
-        raise e
+        # raise e  <-- suppressed to prevent background task crash on Render
 
 async def send_email_smtp(to_email: str, subject: str, html_content: str):
     """
