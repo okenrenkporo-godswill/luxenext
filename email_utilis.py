@@ -11,9 +11,10 @@ SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
 MAIL_FROM = os.getenv("MAIL_FROM")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+SMTP_USER = os.getenv("SMTP_USER", MAIL_FROM)
 
 # Branding
-APP_NAME = "LuxeNext"
+APP_NAME = "Luxenext"
 BRAND_COLOR = "#D4AF37"  # Gold
 BG_COLOR = "#1a1a1a"     # Dark Background
 TEXT_COLOR = "#ffffff"   # White Text
@@ -42,13 +43,13 @@ def send_sync_email(to_email: str, subject: str, html_content: str):
         # Use SMTP_SSL for port 465 (Implicit SSL)
         if SMTP_PORT == 465:
             with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
-                server.login(MAIL_FROM, EMAIL_PASSWORD)
+                server.login(SMTP_USER, EMAIL_PASSWORD)
                 server.send_message(message)
         else:
             # Use SMTP + starttls for port 587
             with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
                 server.starttls()
-                server.login(MAIL_FROM, EMAIL_PASSWORD)
+                server.login(SMTP_USER, EMAIL_PASSWORD)
                 server.send_message(message)
         
         print(f"📧 Email sent to {to_email}")
