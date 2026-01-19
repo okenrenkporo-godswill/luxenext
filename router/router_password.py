@@ -28,7 +28,8 @@ async def forgot_password(email: str, db: Session = Depends(get_db)):
         SECRET_KEY,
         algorithm=ALGORITHM
     )
-    reset_link = f"http://localhost:3000/reset-password?token={reset_token}"
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    reset_link = f"{frontend_url.rstrip('/')}/reset-password?token={reset_token}"
 
     await send_reset_email(user.email, reset_link)
     return {"message": f"Password reset email sent to {user.email}"}
