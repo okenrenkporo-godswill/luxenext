@@ -110,7 +110,7 @@ async def send_verification_email(email_to: str, code: str, subject: str):
             {code}
         </div>
 
-        <p style="font-size: 14px; color: #aaa;">This code will expire in 15 minutes.</p>
+        <p style="font-size: 14px; color: #aaa;">This code will expire in 2 minutes.</p>
     """
     
     html_content = get_base_template(body)

@@ -46,7 +46,7 @@ async def register(user: schemas.UserCreate, db: Session = Depends(database.get_
             # User exists but not verified → resend code
             code = generate_verification_code()
             existing_user.verification_code = code
-            existing_user.verification_code_expires_at = datetime.utcnow() + timedelta(minutes=15)
+            existing_user.verification_code_expires_at = datetime.utcnow() + timedelta(minutes=2)
             db.commit()
             
             await send_verification_email(existing_user.email, code, "Verify Your Account")
@@ -66,7 +66,7 @@ async def register(user: schemas.UserCreate, db: Session = Depends(database.get_
     # Generate code
     code = generate_verification_code()
     new_user.verification_code = code
-    new_user.verification_code_expires_at = datetime.utcnow() + timedelta(minutes=15)
+    new_user.verification_code_expires_at = datetime.utcnow() + timedelta(minutes=2)
     
     db.add(new_user)
     db.commit()
@@ -92,7 +92,7 @@ async def resend_verification(email: str, db: Session = Depends(database.get_db)
     # Generate new code
     code = generate_verification_code()
     user.verification_code = code
-    user.verification_code_expires_at = datetime.utcnow() + timedelta(minutes=15)
+    user.verification_code_expires_at = datetime.utcnow() + timedelta(minutes=2)
     db.commit()
 
     # Send in background
