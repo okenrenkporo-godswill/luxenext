@@ -28,22 +28,6 @@ class Coupon(CouponBase):
     class Config:
         from_attributes = True
 
-# ===============================
-# Wishlist Schemas
-# ===============================
-class WishlistBase(BaseModel):
-    user_id: int
-    product_id: int
-
-class WishlistCreate(WishlistBase):
-    pass
-
-class Wishlist(WishlistBase):
-    id: int
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 # ===============================
 # PaymentMethod Schemas
@@ -154,6 +138,24 @@ class ProductUpdate(BaseModel):
 class Product(ProductBase):
     id: int
     created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# ===============================
+# Wishlist Schemas
+# ===============================
+class WishlistBase(BaseModel):
+    user_id: int
+    product_id: int
+
+class WishlistCreate(WishlistBase):
+    pass
+
+class Wishlist(WishlistBase):
+    id: int
+    created_at: datetime
+    product: Optional[Product] = None
 
     class Config:
         from_attributes = True

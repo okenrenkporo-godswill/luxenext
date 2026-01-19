@@ -19,14 +19,14 @@ def create_wishlist(wishlist: schemas.WishlistCreate, db: Session = Depends(get_
 
 @router.get("/{wishlist_id}")
 def get_wishlist(wishlist_id: int, db: Session = Depends(get_db)):
-    db_wishlist = crud.get_wishlists(db, wishlist_id)
+    db_wishlist = crud.get_wishlist_by_id(db, wishlist_id)
     if not db_wishlist:
         raise HTTPException(status_code=404, detail="Wishlist item not found")
     return response_format(db_wishlist, "Wishlist retrieved successfully")
 
 @router.get("/user/{user_id}")
 def get_user_wishlist(user_id: int, db: Session = Depends(get_db)):
-    db_wishlist = crud.get_wishlist(db, user_id)
+    db_wishlist = crud.get_user_wishlist(db, user_id)
     return response_format(db_wishlist, "User wishlist retrieved successfully")
 
 @router.delete("/{wishlist_id}")

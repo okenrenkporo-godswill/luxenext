@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
 from typing import List, Optional
 from datetime import datetime
@@ -48,20 +48,27 @@ def delete_coupon(db: Session, coupon_id: int):
 # Wishlist CRUD
 # -------------------
 def create_wishlist(db: Session, wishlist: schemas.WishlistCreate):
+    # Optional: check for duplicates
+    existing = db.query(models.Wishlist).filter(
+        models.Wishlist.user_id == wishlist.user_id,
+        models.Wishlist.product_id == wishlist.product_id
+    ).first()
+    if existing:
+        return existing
     db_wishlist = models.Wishlist(**wishlist.model_dump())
     db.add(db_wishlist)
     db.commit()
     db.refresh(db_wishlist)
     return db_wishlist
 
-def get_wishlist(db: Session, wishlist_id: int):
+def get_wishlist_by_id(db: Session, wishlist_id: int):
     return db.query(models.Wishlist).filter(models.Wishlist.id == wishlist_id).first()
 
-def get_wishlists(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Wishlist).offset(skip).limit(limit).all()
+def get_user_wishlist(db: Session, user_id: int):
+    return db.query(models.Wishlist).options(joinedload(models.Wishlist.product)).filter(models.Wishlist.user_id == user_id).all()
 
 def delete_wishlist(db: Session, wishlist_id: int):
-    db_wishlist = get_wishlist(db, wishlist_id)
+    db_wishlist = get_wishlist_by_id(db, wishlist_id)
     if db_wishlist:
         db.delete(db_wishlist)
         db.commit()

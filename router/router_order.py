@@ -353,3 +353,32 @@ def delete_order(
         return response_format(None, f"Order {db_order.order_reference} deleted successfully")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# ===============================
+# Delete My Order (User Only - Pending or Canceled only)
+# ===============================
+@router.delete("/user/{order_id}")
+def delete_my_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    db_order = crud.get_order(db, order_id)
+    if not db_order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    # Security check: must be owner
+    if db_order.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this order")
+
+    # Logic check: only pending or canceled
+    allowed_statuses = ["pending", "canceled", "failed", "awaiting_confirmation"]
+    if db_order.status not in allowed_statuses:
+        raise HTTPException(status_code=400, detail=f"Cannot delete order with status: {db_order.status}")
+
+    try:
+        db.delete(db_order)
+        db.commit()
+        return response_format(None, "Order deleted successfully")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
