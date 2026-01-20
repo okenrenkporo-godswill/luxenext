@@ -7,11 +7,11 @@ load_dotenv()
 
 # SMTP Configuration
 # SMTP Configuration
-SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
+SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.sendgrid.net")
+SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 MAIL_FROM = os.getenv("MAIL_FROM")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-SMTP_USER = os.getenv("SMTP_USER", MAIL_FROM)
+SMTP_USER = os.getenv("SMTP_USER", "apikey" if "sendgrid" in SMTP_SERVER.lower() else MAIL_FROM)
 
 # Branding
 APP_NAME = "Luxenext"
