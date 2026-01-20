@@ -33,7 +33,7 @@ def response_format(data=None, message="Success", success=True):
 
 # ---------------------- Register ----------------------
 @router.post("/register")
-async def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
+async def register(user: schemas.UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(database.get_db)):
     existing_user = db.query(models.User).filter(
         (models.User.username == user.username) |
         (models.User.email == user.email.lower())
@@ -49,7 +49,7 @@ async def register(user: schemas.UserCreate, db: Session = Depends(database.get_
             existing_user.verification_code_expires_at = datetime.utcnow() + timedelta(minutes=2)
             db.commit()
             
-            await send_verification_email(existing_user.email, code, "Verify Your Account")
+            background_tasks.add_task(send_verification_email, existing_user.email, code, "Verify Your Account")
             return {"success": True, "message": "User exists but not verified. Verification code resent."}
 
     # ✅ Corrected password hashing
@@ -72,8 +72,8 @@ async def register(user: schemas.UserCreate, db: Session = Depends(database.get_
     db.commit()
     db.refresh(new_user)
 
-    # Send email
-    await send_verification_email(new_user.email, code, "Verify Your Account")
+    # Send email in background
+    background_tasks.add_task(send_verification_email, new_user.email, code, "Verify Your Account")
 
     return {"success": True, "message": "Registration successful. Please check your email for the verification code."}
 
