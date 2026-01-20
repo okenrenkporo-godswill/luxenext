@@ -288,21 +288,3 @@ def get_all_admins(
         "Admins retrieved successfully"
     )
 
-
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("user_id")
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=400, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=400, detail="Invalid token")
-
-    user = crud.get_user(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    hashed_pw = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-    user.hashed_password = hashed_pw
-    db.commit()
-
-    return {"message": "Password reset successful"}
