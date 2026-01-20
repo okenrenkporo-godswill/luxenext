@@ -80,7 +80,8 @@ async def register(user: schemas.UserCreate, background_tasks: BackgroundTasks, 
 
 
 @router.post("/resend-verification")
-async def resend_verification(email: str, db: Session = Depends(database.get_db), background_tasks: BackgroundTasks = None):
+async def resend_verification(request: schemas.ForgotPasswordRequest, db: Session = Depends(database.get_db), background_tasks: BackgroundTasks = None):
+    email = request.email
     user = db.query(models.User).filter(models.User.email == email.lower()).first()
 
     if not user:
