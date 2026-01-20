@@ -69,6 +69,8 @@ class User(Base):
     is_verified = Column(Boolean, default=False)
     verification_code = Column(String(6), nullable=True)
     verification_code_expires_at = Column(DateTime, nullable=True)
+    reset_code = Column(String(6), nullable=True)
+    reset_code_expires_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

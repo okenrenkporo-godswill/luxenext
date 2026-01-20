@@ -247,19 +247,19 @@ async def send_shipping_update(email_to: str, order_ref: str, status: str, track
     await send_email_smtp(email_to, subject, html_content)
 
 
-async def send_reset_email(email_to: str, link: str):
+async def send_reset_email(email_to: str, code: str):
     subject = "Reset Your Password"
     body = f"""
         <h2 style="color: {BRAND_COLOR};">Password Reset</h2>
-        <p>You requested to reset your password. Click the button below to proceed:</p>
+        <p>You requested to reset your password. Use the code below to proceed:</p>
         
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{link}" style="padding: 12px 30px; background: {BRAND_COLOR}; color: #000; 
-                text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
-                Reset Password
-            </a>
+        <div style="background-color: #3d3d3d; color: {BRAND_COLOR}; 
+            padding: 15px; letter-spacing: 8px; font-size: 32px; border-radius: 4px; 
+            font-weight: bold; margin: 30px 0; text-align: center; border: 1px solid {BRAND_COLOR};">
+            {code}
         </div>
 
+        <p style="font-size: 14px; color: #aaa;">This code will expire in 2 minutes.</p>
         <p style="font-size: 14px; color: #aaa;">If you didn't request this, please ignore this email.</p>
     """
     html_content = get_base_template(body)
