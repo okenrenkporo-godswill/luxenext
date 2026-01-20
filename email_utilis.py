@@ -8,7 +8,7 @@ load_dotenv()
 # SMTP Configuration
 # SMTP Configuration
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.sendgrid.net")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+SMTP_PORT = int(os.getenv("SMTP_PORT", 2525))
 MAIL_FROM = os.getenv("MAIL_FROM")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 SMTP_USER = os.getenv("SMTP_USER", "apikey" if "sendgrid" in SMTP_SERVER.lower() else MAIL_FROM)
@@ -39,7 +39,7 @@ def send_sync_email(to_email: str, subject: str, html_content: str):
     message.set_content(html_content, subtype="html")
 
     try:
-        print(f"🔄 Connecting to {SMTP_SERVER}:{SMTP_PORT}...")
+        print(f"🔄 Attempting SMTP connection to {SMTP_SERVER}:{SMTP_PORT} (Timeout: 30s)...")
         # Use SMTP_SSL for port 465 (Implicit SSL)
         if SMTP_PORT == 465:
             with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
